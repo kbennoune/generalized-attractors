@@ -55,11 +55,7 @@ fn main() {
         t: 0
     };
 
-    let calculation = Calculation { configuration: configuration, initial: Iteration{
-        x: 0.1,
-        y: 0.1,
-        t: 0
-    }  };
+    let mut calculation = Calculation { configuration: configuration, iteration: initial };
     // run_iterations(initial, file);
 
     calculation.run_iterations(file);
@@ -79,17 +75,16 @@ pub struct Configuration {
 
 pub struct Calculation {
     configuration: Configuration,
-    initial: Iteration
+    iteration: Iteration
 }
 
 impl Calculation {
-    fn run_iterations(&self, mut file: std::fs::File) {
-        let mut iteration = self.initial;
+    fn run_iterations(&mut self, mut file: std::fs::File) {
         let Configuration {a: _, b: _, c: _, d: _, iterations: iterations} = self.configuration;
         
-        while iteration.t < iterations {
-            self.save_iteration(&iteration, &mut file);
-            iteration = self.next_iteration(iteration);
+        while self.iteration.t < iterations {
+            self.save_iteration(&self.iteration, &mut file);
+            self.iteration = self.next_iteration();
         }
     }
 
@@ -97,12 +92,13 @@ impl Calculation {
         write!(file, "{t} {x} {y}\n", t = i.t, x = i.x, y = i.y);
     }
 
-    fn next_iteration(&self, i: Iteration) -> Iteration {
-        let Configuration {a: a, b: b, c: c, d: d, iterations: _} = self.configuration;
+    fn next_iteration(&self) -> Iteration {
+        let Configuration {a, b, c, d, iterations: _} = self.configuration;
+        let Iteration {t: t_last, x: x_last, y: y_last} = self.iteration;
 
-        let t = i.t + 1;
-        let x = sin(b * i.y) + c * sin(b * i.x);
-        let y = sin(a * i.x) + d * sin(a * i.y);
+        let t = t_last + 1;
+        let x = sin(b * y_last) + c * sin(b * x_last);
+        let y = sin(a * x_last) + d * sin(a * y_last);
 
         Iteration { x: x, y: y, t: t }
     }
