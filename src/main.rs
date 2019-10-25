@@ -1,11 +1,15 @@
 #![feature(non_ascii_idents)]
 
 // https://softologyblog.wordpress.com/tag/attractors/
+extern crate chrono;
 
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::time::{UNIX_EPOCH, SystemTime};
+
+use chrono::offset::Utc;
+use chrono::DateTime;
 
 const A:f64 = -0.966918;
 const B:f64 = 2.879879;
@@ -30,15 +34,11 @@ fn cos(arg: f64) -> f64 {
 fn main() {
     let configuration =  Configuration {a: A, b: B, c: C, d: D, iterations: 300};
     
+    let now = SystemTime::now();
+    let now_secs = now.duration_since(UNIX_EPOCH).expect("BROKEN").as_secs();
+    let datetime: DateTime<Utc> = now.into();
 
-
-    // let initial = Iteration{
-    //     x: 0.1,
-    //     y: 0.1,
-    //     t: 0
-    // };
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).expect("BROKEN").as_secs();
-    let filename = format!("data/pickover.a:{}-b:{}-c:{}-d:{}.{}.dat", A, B, C, D, now);
+    let filename = format!("data/pickover.a:{}.b:{}.c:{}.d:{}.i:{}.{}.dat", datetime.format("%m-%d-%Y-%T"), configuration.a, configuration.b, configuration.c, configuration.d, configuration.iterations);
     fs::create_dir_all("data");
     let mut file = OpenOptions::new()
         .append(true)
@@ -55,14 +55,13 @@ fn main() {
         t: 0
     };
 
-    let mut calculation = Calculation { configuration: configuration, iteration: initial };
-    // run_iterations(initial, file);
+    let mut calculation = Calculation { configuration: configuration, iteration: initial, file: file };
 
-    calculation.run_iterations(file);
+    calculation.run_iterations();
 
     let end =  SystemTime::now().duration_since(UNIX_EPOCH).expect("BROKEN").as_secs();
 
-    println!("Done in {} secs", end - now);
+    println!("Done in {} secs", end - now_secs);
 }
 
 pub struct Configuration {
@@ -75,21 +74,23 @@ pub struct Configuration {
 
 pub struct Calculation {
     configuration: Configuration,
-    iteration: Iteration
+    iteration: Iteration,
+    file: std::fs::File
 }
 
 impl Calculation {
-    fn run_iterations(&mut self, mut file: std::fs::File) {
-        let Configuration {a: _, b: _, c: _, d: _, iterations: iterations} = self.configuration;
+    fn run_iterations(&mut self) {
+        let Configuration {a: _, b: _, c: _, d: _, iterations} = self.configuration;
         
         while self.iteration.t < iterations {
-            self.save_iteration(&self.iteration, &mut file);
+            self.save_iteration();
             self.iteration = self.next_iteration();
         }
     }
 
-    fn save_iteration(&self, i: &Iteration, file: &mut std::fs::File) {
-        write!(file, "{t} {x} {y}\n", t = i.t, x = i.x, y = i.y);
+    fn save_iteration(&self) {
+        let Iteration { t, x, y } = self.iteration;
+        write!(&self.file, "{t} {x} {y}\n", t = t, x = x, y = y);
     }
 
     fn next_iteration(&self) -> Iteration {
