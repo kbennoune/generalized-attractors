@@ -1,0 +1,7 @@
+[package]
+name = "attractor"
+version = "0.1.0"
+authors = ["Kamal Bennoune <kbennoune@gmail.com>"]
+edition = "2018"
+
+[dependencies]
