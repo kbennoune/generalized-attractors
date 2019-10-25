@@ -12,9 +12,7 @@ const B:f64 = 2.879879;
 const C:f64 = 0.765145;
 const D:f64 = 0.744728;
 
-const ITERATIONS: i32 = 3000000;
-
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 struct Iteration {
     x: f64,
     y: f64,
@@ -51,14 +49,20 @@ fn main() {
     write!(file, "t x y\n");
 
 
-    let calculation = Calculation { configuration: configuration };
-    // run_iterations(initial, file);
-
-    calculation.run_iterations(Iteration{
+    let initial = Iteration{
         x: 0.1,
         y: 0.1,
         t: 0
-    }, file);
+    };
+
+    let calculation = Calculation { configuration: configuration, initial: Iteration{
+        x: 0.1,
+        y: 0.1,
+        t: 0
+    }  };
+    // run_iterations(initial, file);
+
+    calculation.run_iterations(file);
 
     let end =  SystemTime::now().duration_since(UNIX_EPOCH).expect("BROKEN").as_secs();
 
@@ -74,13 +78,13 @@ pub struct Configuration {
 }
 
 pub struct Calculation {
-    configuration: Configuration
-    // initial: Iteration
+    configuration: Configuration,
+    initial: Iteration
 }
 
 impl Calculation {
-    fn run_iterations(&self, initial: Iteration, mut file: std::fs::File) {
-        let mut iteration = initial;
+    fn run_iterations(&self, mut file: std::fs::File) {
+        let mut iteration = self.initial;
         let Configuration {a: _, b: _, c: _, d: _, iterations: iterations} = self.configuration;
         
         while iteration.t < iterations {
